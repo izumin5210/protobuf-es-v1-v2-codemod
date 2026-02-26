@@ -1,7 +1,7 @@
 import type { Transform, ASTPath, Identifier } from "jscodeshift";
 import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { ImportManager } from "../utils/import-manager.js";
-import { toSchemaName } from "../utils/schema-name.js";
+import { toSchemaName, isSchemaName } from "../utils/schema-name.js";
 
 const PROTOBUF_RUNTIME_PACKAGE = "@bufbuild/protobuf";
 
@@ -42,31 +42,60 @@ const transform: Transform = (fileInfo, api) => {
       if (!INSTANCE_METHODS.has(property.name)) return;
 
       const object = callee.object;
-      if (object.type !== "Identifier") return;
-
-      const messageName = variableTypeMap.get(object.name);
-      if (!messageName) return;
-
-      const sourceFile = tracker.getSourceFile(messageName);
-      if (!sourceFile) return;
-
-      const originalName = tracker.getOriginalName(messageName) ?? messageName;
-      const schemaName = toSchemaName(originalName);
       const methodName = property.name;
 
-      // `msg.method(args)` → `method(Schema, msg, args)`
-      const args = [
-        j.identifier(schemaName),
-        j.identifier(object.name),
-        ...path.node.arguments,
-      ];
+      // パターン1: 変数名からの型推論 - `msg.method(args)`
+      if (object.type === "Identifier") {
+        const messageName = variableTypeMap.get(object.name);
+        if (!messageName) return;
 
-      j(path).replaceWith(
-        j.callExpression(j.identifier(methodName), args),
-      );
+        const sourceFile = tracker.getSourceFile(messageName);
+        if (!sourceFile) return;
 
-      runtimeFunctionsToAdd.add(methodName);
-      schemasToAdd.set(schemaName, sourceFile);
+        const originalName = tracker.getOriginalName(messageName) ?? messageName;
+        const schemaName = toSchemaName(originalName);
+
+        // `msg.method(args)` → `method(Schema, msg, args)`
+        const args = [
+          j.identifier(schemaName),
+          j.identifier(object.name),
+          ...path.node.arguments,
+        ];
+
+        j(path).replaceWith(
+          j.callExpression(j.identifier(methodName), args),
+        );
+
+        runtimeFunctionsToAdd.add(methodName);
+        schemasToAdd.set(schemaName, sourceFile);
+        return;
+      }
+
+      // パターン2: create(XSchema, ...).method() チェーン
+      if (
+        object.type === "CallExpression" &&
+        object.callee.type === "Identifier" &&
+        object.callee.name === "create" &&
+        object.arguments.length >= 1 &&
+        object.arguments[0].type === "Identifier" &&
+        isSchemaName(object.arguments[0].name)
+      ) {
+        const schemaIdentifier = object.arguments[0];
+        // create(XSchema, ...).method(args) → method(XSchema, create(XSchema, ...), args)
+        const args = [
+          schemaIdentifier,
+          object,
+          ...path.node.arguments,
+        ];
+
+        j(path).replaceWith(
+          j.callExpression(j.identifier(methodName), args),
+        );
+
+        runtimeFunctionsToAdd.add(methodName);
+        // Schema は既に import されているはずなので schemasToAdd に追加しない
+        return;
+      }
     });
 
   if (runtimeFunctionsToAdd.size === 0) {

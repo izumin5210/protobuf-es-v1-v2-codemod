@@ -70,6 +70,7 @@ describe("resolveTransforms", () => {
       "to-plain-message",
       "plain-message",
       "well-known-type-imports",
+      "proto3-enum",
     ]);
   });
 });

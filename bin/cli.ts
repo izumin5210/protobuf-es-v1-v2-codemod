@@ -11,6 +11,7 @@ export const TRANSFORM_NAMES = [
   "to-plain-message",
   "plain-message",
   "well-known-type-imports",
+  "proto3-enum",
 ] as const;
 
 export type TransformName = (typeof TRANSFORM_NAMES)[number];

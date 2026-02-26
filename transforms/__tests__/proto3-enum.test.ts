@@ -1,23 +1,20 @@
 import { describe, it, expect } from "vitest";
 import { applyFixtureTransform } from "../../utils/test-utils.js";
-import transform from "../instance-methods.js";
+import transform from "../proto3-enum.js";
 
-describe("instance-methods", () => {
+describe("proto3-enum", () => {
   it.each([
-    "type-annotation",
-    "constructor-inference",
-    "static-method-inference",
-    "function-param",
-    "unknown-type",
-    "multiple-messages",
-    "create-chain",
+    "basic",
+    "multiple-enums",
+    "proto3-still-used",
+    "no-transform",
   ])(
     "transforms %s correctly",
     (fixture) => {
       const { actual, expected } = applyFixtureTransform(
         transform,
         import.meta.dirname,
-        `instance-methods/${fixture}`,
+        `proto3-enum/${fixture}`,
       );
       expect(actual).toBe(expected);
     },
