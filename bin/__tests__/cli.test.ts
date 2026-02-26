@@ -64,12 +64,17 @@ describe("resolveTransforms", () => {
       return match?.[1];
     });
     expect(names).toEqual([
+      "connect-import-path",
+      "connect-client-types",
       "message-constructor",
       "static-methods",
       "instance-methods",
       "to-plain-message",
       "plain-message",
       "well-known-type-imports",
+      "wkt-static-methods",
+      "instanceof-message",
+      "protobuf-value-ref",
       "proto3-enum",
     ]);
   });

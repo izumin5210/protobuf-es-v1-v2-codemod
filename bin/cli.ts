@@ -5,12 +5,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /** 推奨実行順序で並べた transform 名 */
 export const TRANSFORM_NAMES = [
+  // connect-es v2 migration
+  "connect-import-path",
+  "connect-client-types",
+  // protobuf-es v2 migration
   "message-constructor",
   "static-methods",
   "instance-methods",
   "to-plain-message",
   "plain-message",
   "well-known-type-imports",
+  "wkt-static-methods",
+  "instanceof-message",
+  "protobuf-value-ref",
   "proto3-enum",
 ] as const;
 
