@@ -96,6 +96,7 @@ async function main(): Promise<void> {
       babel: false,
       extensions: "ts,tsx,js,jsx",
       parser: "tsx",
+      ignorePattern: ["**/node_modules/**", "**/dist/**", "**/.next/**"],
     });
   }
 }

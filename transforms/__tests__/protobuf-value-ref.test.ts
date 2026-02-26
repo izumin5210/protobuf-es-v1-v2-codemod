@@ -8,6 +8,7 @@ describe("protobuf-value-ref", () => {
     "no-protobuf",
     "call-argument",
     "type-only-import",
+    "service-descriptor",
   ])(
     "transforms %s correctly",
     (fixture) => {

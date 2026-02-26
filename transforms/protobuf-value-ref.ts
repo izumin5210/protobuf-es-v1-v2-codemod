@@ -29,6 +29,8 @@ const transform: Transform = (fileInfo, api) => {
       if (arg.type !== "Identifier") continue;
       if (!tracker.isProtobufIdentifier(arg.name)) continue;
       if (isSchemaName(arg.name)) continue;
+      // サービスディスクリプタは v2 でもそのまま値として使うため除外
+      if (isServiceName(arg.name)) continue;
 
       const originalName = tracker.getOriginalName(arg.name) ?? arg.name;
       const sourceFile = tracker.getSourceFile(arg.name);
@@ -110,6 +112,10 @@ const transform: Transform = (fileInfo, api) => {
 
   return root.toSource();
 };
+
+function isServiceName(name: string): boolean {
+  return name.endsWith("Service");
+}
 
 export default transform;
 export const parser = "tsx";
