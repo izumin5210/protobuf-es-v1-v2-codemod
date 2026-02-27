@@ -19,6 +19,7 @@ export const TRANSFORM_NAMES = [
   "instanceof-message",
   "protobuf-value-ref",
   "proto3-enum",
+  "extension-option-ref",
 ] as const;
 
 export type TransformName = (typeof TRANSFORM_NAMES)[number];

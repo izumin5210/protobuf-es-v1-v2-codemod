@@ -76,6 +76,7 @@ describe("resolveTransforms", () => {
       "instanceof-message",
       "protobuf-value-ref",
       "proto3-enum",
+      "extension-option-ref",
     ]);
   });
 });
