@@ -1,4 +1,5 @@
 import type { Transform } from "jscodeshift";
+import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { ImportManager } from "../utils/import-manager.js";
 import { toSchemaName } from "../utils/schema-name.js";
 
@@ -8,11 +9,13 @@ const transform: Transform = (fileInfo, api) => {
   const j = api.jscodeshift;
   const root = j(fileInfo.source);
 
+  const tracker = ProtobufIdentifierTracker.fromRoot(root, j);
   const importManager = new ImportManager(root, j);
 
   let transformed = false;
   let needsMessageInitShape = false;
   const importsToRemove = new Set<string>();
+  const schemasToAdd = new Map<string, string>();
 
   // Find all TSTypeReference nodes for PlainMessage<T> and PartialMessage<T>
   root
@@ -52,6 +55,12 @@ const transform: Transform = (fileInfo, api) => {
         transformed = true;
         needsMessageInitShape = true;
         importsToRemove.add("PartialMessage");
+
+        // Track schema import needed
+        const sourceFile = tracker.getSourceFile(messageName);
+        if (sourceFile) {
+          schemasToAdd.set(schemaName, sourceFile);
+        }
       }
     });
 
@@ -97,6 +106,82 @@ const transform: Transform = (fileInfo, api) => {
   if (needsMessageInitShape) {
     importManager.addTypeImport(PROTOBUF_RUNTIME_PACKAGE, "MessageInitShape");
     importManager.apply();
+  }
+
+  // Add schema imports using the same pattern as message-constructor.ts
+  const typeOnlySourceSchemas = new Map<string, string[]>();
+
+  for (const [schemaName, sourceFile] of schemasToAdd) {
+    // Skip if schema is already imported
+    let alreadyImported = false;
+    root.find(j.ImportDeclaration, { source: { value: sourceFile } }).forEach((declPath) => {
+      for (const s of declPath.node.specifiers ?? []) {
+        if (s.type === "ImportSpecifier") {
+          const localName = s.local?.type === "Identifier" ? s.local.name : undefined;
+          const importedName = s.imported.type === "Identifier" ? s.imported.name : undefined;
+          if (localName === schemaName || importedName === schemaName) {
+            alreadyImported = true;
+          }
+        }
+      }
+    });
+    if (alreadyImported) continue;
+
+    const existingDecls = root.find(j.ImportDeclaration, {
+      source: { value: sourceFile },
+    });
+
+    let hasValueImport = false;
+    existingDecls.forEach((declPath) => {
+      if (declPath.node.importKind !== "type") {
+        hasValueImport = true;
+      }
+    });
+
+    if (hasValueImport) {
+      const schemaImportManager = new ImportManager(root, j);
+      schemaImportManager.addNamedImport(sourceFile, schemaName);
+      schemaImportManager.apply();
+    } else {
+      const schemas = typeOnlySourceSchemas.get(sourceFile) ?? [];
+      schemas.push(schemaName);
+      typeOnlySourceSchemas.set(sourceFile, schemas);
+    }
+  }
+
+  // For type-only sources, insert a new value import declaration
+  for (const [sourceFile, schemaNames] of typeOnlySourceSchemas) {
+    const specifiers = schemaNames.map((name) =>
+      j.importSpecifier(j.identifier(name)),
+    );
+    const newDecl = j.importDeclaration(specifiers, j.literal(sourceFile));
+
+    const program = root.find(j.Program).paths()[0];
+    const body = program.node.body;
+    let insertIndex = -1;
+
+    for (let i = body.length - 1; i >= 0; i--) {
+      const node = body[i];
+      if (
+        node.type === "ImportDeclaration" &&
+        node.source.value === sourceFile
+      ) {
+        insertIndex = i + 1;
+        break;
+      }
+    }
+
+    if (insertIndex >= 0) {
+      body.splice(insertIndex, 0, newDecl);
+    } else {
+      let lastImportIndex = -1;
+      for (let i = 0; i < body.length; i++) {
+        if (body[i].type === "ImportDeclaration") {
+          lastImportIndex = i;
+        }
+      }
+      body.splice(lastImportIndex + 1, 0, newDecl);
+    }
   }
 
   return root.toSource();
