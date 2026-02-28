@@ -64,6 +64,41 @@ const transform: Transform = (fileInfo, api) => {
       }
     });
 
+  // Second pass: Partial<T> where T is a protobuf message type
+  root
+    .find(j.TSTypeReference)
+    .forEach((path) => {
+      const typeName = path.node.typeName;
+      if (typeName.type !== "Identifier" || typeName.name !== "Partial") return;
+
+      const typeParams = path.node.typeParameters;
+      if (!typeParams || typeParams.params.length !== 1) return;
+
+      const typeArg = typeParams.params[0];
+      if (typeArg.type !== "TSTypeReference" || typeArg.typeName.type !== "Identifier") return;
+
+      const messageName = typeArg.typeName.name;
+      if (!tracker.isProtobufIdentifier(messageName)) return;
+
+      const schemaName = toSchemaName(messageName);
+
+      const replacement = j.tsTypeReference(
+        j.identifier("MessageInitShape"),
+        j.tsTypeParameterInstantiation([
+          j.tsTypeQuery(j.identifier(schemaName)),
+        ]),
+      );
+
+      j(path).replaceWith(replacement);
+      transformed = true;
+      needsMessageInitShape = true;
+
+      const sourceFile = tracker.getSourceFile(messageName);
+      if (sourceFile) {
+        schemasToAdd.set(schemaName, sourceFile);
+      }
+    });
+
   if (!transformed) {
     return fileInfo.source;
   }
@@ -102,10 +137,35 @@ const transform: Transform = (fileInfo, api) => {
     });
 
   // If we still need MessageInitShape (e.g. the original import had other specifiers
-  // that were kept), add it via ImportManager
+  // that were kept, or Partial<T> was used without @bufbuild/protobuf import)
   if (needsMessageInitShape) {
-    importManager.addTypeImport(PROTOBUF_RUNTIME_PACKAGE, "MessageInitShape");
-    importManager.apply();
+    const existingProtobufImport = root.find(j.ImportDeclaration, {
+      source: { value: PROTOBUF_RUNTIME_PACKAGE },
+    });
+
+    if (existingProtobufImport.length > 0) {
+      importManager.addTypeImport(PROTOBUF_RUNTIME_PACKAGE, "MessageInitShape");
+      importManager.apply();
+    } else {
+      // No existing @bufbuild/protobuf import; insert before the first import
+      const messageInitShapeDecl = j.importDeclaration(
+        [j.importSpecifier(j.identifier("MessageInitShape"))],
+        j.literal(PROTOBUF_RUNTIME_PACKAGE),
+      );
+      messageInitShapeDecl.importKind = "type";
+
+      const program = root.find(j.Program).paths()[0];
+      const body = program.node.body;
+      const firstImportIndex = body.findIndex(
+        (node) => node.type === "ImportDeclaration",
+      );
+
+      if (firstImportIndex >= 0) {
+        body.splice(firstImportIndex, 0, messageInitShapeDecl);
+      } else {
+        body.unshift(messageInitShapeDecl);
+      }
+    }
   }
 
   // Add schema imports using the same pattern as message-constructor.ts
