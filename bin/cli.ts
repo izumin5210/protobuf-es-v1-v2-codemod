@@ -20,6 +20,7 @@ export const TRANSFORM_NAMES = [
   "protobuf-value-ref",
   "proto3-enum",
   "extension-option-ref",
+  "protoplugin-v2",
 ] as const;
 
 export type TransformName = (typeof TRANSFORM_NAMES)[number];
