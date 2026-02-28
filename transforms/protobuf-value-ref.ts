@@ -28,11 +28,11 @@ const transform: Transform = (fileInfo, api) => {
     for (const arg of path.node.arguments) {
       if (arg.type !== "Identifier") continue;
       if (!tracker.isProtobufIdentifier(arg.name)) continue;
-      if (isSchemaName(arg.name)) continue;
-      // サービスディスクリプタは v2 でもそのまま値として使うため除外
-      if (isServiceName(arg.name)) continue;
 
       const originalName = tracker.getOriginalName(arg.name) ?? arg.name;
+      if (isSchemaName(originalName)) continue;
+      // サービスディスクリプタは v2 でもそのまま値として使うため除外
+      if (isServiceName(originalName)) continue;
       const sourceFile = tracker.getSourceFile(arg.name);
       if (!sourceFile) continue;
 
