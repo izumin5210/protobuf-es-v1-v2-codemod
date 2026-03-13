@@ -58,7 +58,7 @@ describe("resolveTransforms", () => {
   it("returns transforms in the recommended execution order", () => {
     const result = resolveTransforms("all");
     const names = result.map((p) => {
-      const match = p.match(/\/([^/]+)\.ts$/);
+      const match = p.match(/[/\\]([^/\\]+)\.ts$/);
       return match?.[1];
     });
     expect(names).toEqual([
