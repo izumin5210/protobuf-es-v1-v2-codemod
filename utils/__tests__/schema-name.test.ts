@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { toSchemaName, isSchemaName } from "../schema-name.js";
+import { describe, expect, it } from "vitest";
+import { isSchemaName, toSchemaName } from "../schema-name.js";
 
 describe("toSchemaName", () => {
   it("appends Schema suffix to message name", () => {

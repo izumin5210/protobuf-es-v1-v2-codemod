@@ -1,6 +1,6 @@
 import type { Transform } from "jscodeshift";
-import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { ImportManager } from "../utils/import-manager.js";
+import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { toSchemaName } from "../utils/schema-name.js";
 
 const PROTOBUF_RUNTIME_PACKAGE = "@bufbuild/protobuf";
@@ -18,68 +18,32 @@ const transform: Transform = (fileInfo, api) => {
   const schemasToAdd = new Map<string, string>();
 
   // Find all TSTypeReference nodes for PlainMessage<T> and PartialMessage<T>
-  root
-    .find(j.TSTypeReference)
-    .forEach((path) => {
-      const typeName = path.node.typeName;
-      if (typeName.type !== "Identifier") return;
+  root.find(j.TSTypeReference).forEach((path) => {
+    const typeName = path.node.typeName;
+    if (typeName.type !== "Identifier") return;
 
-      const name = typeName.name;
-      if (name !== "PlainMessage" && name !== "PartialMessage") return;
+    const name = typeName.name;
+    if (name !== "PlainMessage" && name !== "PartialMessage") return;
 
-      const typeParams = path.node.typeParameters;
-      if (!typeParams || typeParams.params.length !== 1) return;
+    const typeParams = path.node.typeParameters;
+    if (!typeParams || typeParams.params.length !== 1) return;
 
-      const typeArg = typeParams.params[0];
+    const typeArg = typeParams.params[0];
 
-      if (name === "PlainMessage") {
-        // PlainMessage<T> -> T
-        j(path).replaceWith(typeArg);
-        transformed = true;
-        importsToRemove.add("PlainMessage");
-      } else {
-        // PartialMessage<T> -> MessageInitShape<typeof TSchema>
-        if (typeArg.type !== "TSTypeReference" || typeArg.typeName.type !== "Identifier") return;
-
-        const messageName = typeArg.typeName.name;
-        const schemaName = toSchemaName(messageName);
-
-        const replacement = j.tsTypeReference(
-          j.identifier("MessageInitShape"),
-          j.tsTypeParameterInstantiation([
-            j.tsTypeQuery(j.identifier(schemaName)),
-          ]),
-        );
-
-        j(path).replaceWith(replacement);
-        transformed = true;
-        needsMessageInitShape = true;
-        importsToRemove.add("PartialMessage");
-
-        // Track schema import needed
-        const sourceFile = tracker.getSourceFile(messageName);
-        if (sourceFile) {
-          schemasToAdd.set(schemaName, sourceFile);
-        }
-      }
-    });
-
-  // Second pass: Partial<T> where T is a protobuf message type
-  root
-    .find(j.TSTypeReference)
-    .forEach((path) => {
-      const typeName = path.node.typeName;
-      if (typeName.type !== "Identifier" || typeName.name !== "Partial") return;
-
-      const typeParams = path.node.typeParameters;
-      if (!typeParams || typeParams.params.length !== 1) return;
-
-      const typeArg = typeParams.params[0];
-      if (typeArg.type !== "TSTypeReference" || typeArg.typeName.type !== "Identifier") return;
+    if (name === "PlainMessage") {
+      // PlainMessage<T> -> T
+      j(path).replaceWith(typeArg);
+      transformed = true;
+      importsToRemove.add("PlainMessage");
+    } else {
+      // PartialMessage<T> -> MessageInitShape<typeof TSchema>
+      if (
+        typeArg.type !== "TSTypeReference" ||
+        typeArg.typeName.type !== "Identifier"
+      )
+        return;
 
       const messageName = typeArg.typeName.name;
-      if (!tracker.isProtobufIdentifier(messageName)) return;
-
       const schemaName = toSchemaName(messageName);
 
       const replacement = j.tsTypeReference(
@@ -92,12 +56,50 @@ const transform: Transform = (fileInfo, api) => {
       j(path).replaceWith(replacement);
       transformed = true;
       needsMessageInitShape = true;
+      importsToRemove.add("PartialMessage");
 
+      // Track schema import needed
       const sourceFile = tracker.getSourceFile(messageName);
       if (sourceFile) {
         schemasToAdd.set(schemaName, sourceFile);
       }
-    });
+    }
+  });
+
+  // Second pass: Partial<T> where T is a protobuf message type
+  root.find(j.TSTypeReference).forEach((path) => {
+    const typeName = path.node.typeName;
+    if (typeName.type !== "Identifier" || typeName.name !== "Partial") return;
+
+    const typeParams = path.node.typeParameters;
+    if (!typeParams || typeParams.params.length !== 1) return;
+
+    const typeArg = typeParams.params[0];
+    if (
+      typeArg.type !== "TSTypeReference" ||
+      typeArg.typeName.type !== "Identifier"
+    )
+      return;
+
+    const messageName = typeArg.typeName.name;
+    if (!tracker.isProtobufIdentifier(messageName)) return;
+
+    const schemaName = toSchemaName(messageName);
+
+    const replacement = j.tsTypeReference(
+      j.identifier("MessageInitShape"),
+      j.tsTypeParameterInstantiation([j.tsTypeQuery(j.identifier(schemaName))]),
+    );
+
+    j(path).replaceWith(replacement);
+    transformed = true;
+    needsMessageInitShape = true;
+
+    const sourceFile = tracker.getSourceFile(messageName);
+    if (sourceFile) {
+      schemasToAdd.set(schemaName, sourceFile);
+    }
+  });
 
   if (!transformed) {
     return fileInfo.source;
@@ -114,7 +116,8 @@ const transform: Transform = (fileInfo, api) => {
       // Remove PlainMessage and PartialMessage specifiers
       path.node.specifiers = specifiers.filter((s) => {
         if (s.type !== "ImportSpecifier") return true;
-        const localName = s.local?.type === "Identifier" ? s.local.name : undefined;
+        const localName =
+          s.local?.type === "Identifier" ? s.local.name : undefined;
         return !localName || !importsToRemove.has(localName);
       });
 
@@ -174,17 +177,21 @@ const transform: Transform = (fileInfo, api) => {
   for (const [schemaName, sourceFile] of schemasToAdd) {
     // Skip if schema is already imported
     let alreadyImported = false;
-    root.find(j.ImportDeclaration, { source: { value: sourceFile } }).forEach((declPath) => {
-      for (const s of declPath.node.specifiers ?? []) {
-        if (s.type === "ImportSpecifier") {
-          const localName = s.local?.type === "Identifier" ? s.local.name : undefined;
-          const importedName = s.imported.type === "Identifier" ? s.imported.name : undefined;
-          if (localName === schemaName || importedName === schemaName) {
-            alreadyImported = true;
+    root
+      .find(j.ImportDeclaration, { source: { value: sourceFile } })
+      .forEach((declPath) => {
+        for (const s of declPath.node.specifiers ?? []) {
+          if (s.type === "ImportSpecifier") {
+            const localName =
+              s.local?.type === "Identifier" ? s.local.name : undefined;
+            const importedName =
+              s.imported.type === "Identifier" ? s.imported.name : undefined;
+            if (localName === schemaName || importedName === schemaName) {
+              alreadyImported = true;
+            }
           }
         }
-      }
-    });
+      });
     if (alreadyImported) continue;
 
     const existingDecls = root.find(j.ImportDeclaration, {

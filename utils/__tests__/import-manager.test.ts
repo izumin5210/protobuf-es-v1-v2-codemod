@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import jscodeshift from "jscodeshift";
+import { describe, expect, it } from "vitest";
 import { ImportManager } from "../import-manager.js";
 
 const j = jscodeshift.withParser("tsx");

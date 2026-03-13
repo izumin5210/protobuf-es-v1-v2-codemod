@@ -1,6 +1,6 @@
 import type { Transform } from "jscodeshift";
-import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { ImportManager } from "../utils/import-manager.js";
+import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { toSchemaName } from "../utils/schema-name.js";
 
 const PROTOBUF_RUNTIME_PACKAGE = "@bufbuild/protobuf";
@@ -51,9 +51,7 @@ const transform: Transform = (fileInfo, api) => {
       const args = [j.identifier(schemaName), ...path.node.arguments];
 
       // Replace `X.fromXxx(args...)` with `fromXxx(XSchema, args...)`
-      j(path).replaceWith(
-        j.callExpression(j.identifier(methodName), args),
-      );
+      j(path).replaceWith(j.callExpression(j.identifier(methodName), args));
 
       runtimeFunctionsToAdd.add(methodName);
       schemasToAdd.set(schemaName, sourceFile);

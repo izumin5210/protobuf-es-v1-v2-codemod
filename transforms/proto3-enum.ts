@@ -1,6 +1,6 @@
 import type { Transform } from "jscodeshift";
-import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { ImportManager } from "../utils/import-manager.js";
+import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { toSchemaName } from "../utils/schema-name.js";
 
 const PROTOBUF_RUNTIME_PACKAGE = "@bufbuild/protobuf";
@@ -42,8 +42,13 @@ const transform: Transform = (fileInfo, api) => {
       const proto3Obj = getEnumTypeCall.callee.object;
       const getEnumTypeProp = getEnumTypeCall.callee.property;
 
-      if (proto3Obj.type !== "Identifier" || proto3Obj.name !== "proto3") return;
-      if (getEnumTypeProp.type !== "Identifier" || getEnumTypeProp.name !== "getEnumType") return;
+      if (proto3Obj.type !== "Identifier" || proto3Obj.name !== "proto3")
+        return;
+      if (
+        getEnumTypeProp.type !== "Identifier" ||
+        getEnumTypeProp.name !== "getEnumType"
+      )
+        return;
 
       // getEnumType の引数からenum名を取得
       if (getEnumTypeCall.arguments.length !== 1) return;
@@ -67,10 +72,7 @@ const transform: Transform = (fileInfo, api) => {
       // EnumNameSchema.values.find(v => v.number === expr) を構築
       const replacement = j.callExpression(
         j.memberExpression(
-          j.memberExpression(
-            j.identifier(schemaName),
-            j.identifier("values"),
-          ),
+          j.memberExpression(j.identifier(schemaName), j.identifier("values")),
           j.identifier("find"),
         ),
         [
@@ -78,10 +80,7 @@ const transform: Transform = (fileInfo, api) => {
             [j.identifier("v")],
             j.binaryExpression(
               "===",
-              j.memberExpression(
-                j.identifier("v"),
-                j.identifier("number"),
-              ),
+              j.memberExpression(j.identifier("v"), j.identifier("number")),
               findNumberArg,
             ),
           ),
@@ -100,11 +99,15 @@ const transform: Transform = (fileInfo, api) => {
 
   // proto3 import の削除
   // proto3 が他で使われていなければ削除する
-  const proto3Usages = root.find(j.Identifier, { name: "proto3" }).filter((path) => {
-    // import specifier 内の使用は除外
-    return path.parent.node.type !== "ImportSpecifier" &&
-      path.parent.node.type !== "ImportDefaultSpecifier";
-  });
+  const proto3Usages = root
+    .find(j.Identifier, { name: "proto3" })
+    .filter((path) => {
+      // import specifier 内の使用は除外
+      return (
+        path.parent.node.type !== "ImportSpecifier" &&
+        path.parent.node.type !== "ImportDefaultSpecifier"
+      );
+    });
 
   if (proto3Usages.length === 0) {
     importManager.removeNamedImport(PROTOBUF_RUNTIME_PACKAGE, "proto3");

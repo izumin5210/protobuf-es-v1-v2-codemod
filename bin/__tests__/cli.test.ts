@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { parseArgs, resolveTransforms, TRANSFORM_NAMES } from "../cli.js";
 
 describe("parseArgs", () => {
@@ -39,9 +39,7 @@ describe("parseArgs", () => {
   });
 
   it("throws for unknown transform name", () => {
-    expect(() => parseArgs(["--transform=unknown", "src/"])).toThrow(
-      "unknown",
-    );
+    expect(() => parseArgs(["--transform=unknown", "src/"])).toThrow("unknown");
   });
 });
 

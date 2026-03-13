@@ -44,7 +44,8 @@ const transform: Transform = (fileInfo, api) => {
           s.imported.type === "Identifier" &&
           s.imported.name === "localName"
         ) {
-          const localIdent = s.local?.type === "Identifier" ? s.local.name : "localName";
+          const localIdent =
+            s.local?.type === "Identifier" ? s.local.name : "localName";
           localNameImported.add(localIdent);
         }
       }
@@ -62,11 +63,19 @@ const transform: Transform = (fileInfo, api) => {
           // Merge specifiers into existing import
           const existingNames = new Set(
             (existingPath.node.specifiers ?? [])
-              .filter((s): s is ReturnType<typeof j.importSpecifier> => s.type === "ImportSpecifier")
-              .map((s) => s.imported.type === "Identifier" ? s.imported.name : ""),
+              .filter(
+                (s): s is ReturnType<typeof j.importSpecifier> =>
+                  s.type === "ImportSpecifier",
+              )
+              .map((s) =>
+                s.imported.type === "Identifier" ? s.imported.name : "",
+              ),
           );
           for (const s of path.node.specifiers ?? []) {
-            if (s.type === "ImportSpecifier" && s.imported.type === "Identifier") {
+            if (
+              s.type === "ImportSpecifier" &&
+              s.imported.type === "Identifier"
+            ) {
               if (!existingNames.has(s.imported.name)) {
                 existingPath.node.specifiers ??= [];
                 existingPath.node.specifiers.push(s);
@@ -91,7 +100,8 @@ const transform: Transform = (fileInfo, api) => {
   if (localNameImported.size > 0) {
     root.find(j.CallExpression).forEach((path) => {
       const callee = path.node.callee;
-      if (callee.type !== "Identifier" || !localNameImported.has(callee.name)) return;
+      if (callee.type !== "Identifier" || !localNameImported.has(callee.name))
+        return;
 
       const args = path.node.arguments;
       if (args.length !== 1 || args[0].type === "SpreadElement") return;
@@ -104,30 +114,41 @@ const transform: Transform = (fileInfo, api) => {
     });
 
     // Remove localName from imports
-    root.find(j.ImportDeclaration, { source: { value: PROTOPLUGIN } }).forEach((path) => {
-      const specifiers = path.node.specifiers ?? [];
-      path.node.specifiers = specifiers.filter((s) => {
-        if (s.type !== "ImportSpecifier") return true;
-        const importedName = s.imported.type === "Identifier" ? s.imported.name : undefined;
-        return importedName !== "localName";
+    root
+      .find(j.ImportDeclaration, { source: { value: PROTOPLUGIN } })
+      .forEach((path) => {
+        const specifiers = path.node.specifiers ?? [];
+        path.node.specifiers = specifiers.filter((s) => {
+          if (s.type !== "ImportSpecifier") return true;
+          const importedName =
+            s.imported.type === "Identifier" ? s.imported.name : undefined;
+          return importedName !== "localName";
+        });
+        if (path.node.specifiers.length === 0) {
+          path.prune();
+        }
       });
-      if (path.node.specifiers.length === 0) {
-        path.prune();
-      }
-    });
   }
 
   // Pattern C: f.import(name, from).toTypeOnly() → f.import(name, from, true)
   root.find(j.CallExpression).forEach((path) => {
     const callee = path.node.callee;
     if (callee.type !== "MemberExpression") return;
-    if (callee.property.type !== "Identifier" || callee.property.name !== "toTypeOnly") return;
+    if (
+      callee.property.type !== "Identifier" ||
+      callee.property.name !== "toTypeOnly"
+    )
+      return;
 
     // The object should be a call expression: f.import(name, from)
     const innerCall = callee.object;
     if (innerCall.type !== "CallExpression") return;
     if (innerCall.callee.type !== "MemberExpression") return;
-    if (innerCall.callee.property.type !== "Identifier" || innerCall.callee.property.name !== "import") return;
+    if (
+      innerCall.callee.property.type !== "Identifier" ||
+      innerCall.callee.property.name !== "import"
+    )
+      return;
 
     // Replace: f.import(name, from).toTypeOnly() → f.import(name, from, true)
     innerCall.arguments.push(j.booleanLiteral(true));
@@ -140,7 +161,11 @@ const transform: Transform = (fileInfo, api) => {
     const expr = path.node.expression;
     if (expr.type !== "CallExpression") return;
     if (expr.callee.type !== "MemberExpression") return;
-    if (expr.callee.property.type !== "Identifier" || expr.callee.property.name !== "jsDoc") return;
+    if (
+      expr.callee.property.type !== "Identifier" ||
+      expr.callee.property.name !== "jsDoc"
+    )
+      return;
 
     const receiver = expr.callee.object;
 
@@ -183,21 +208,26 @@ const transform: Transform = (fileInfo, api) => {
 
   // Rename getExtension import to getOption
   if (needsGetOptionImport) {
-    root.find(j.ImportDeclaration, { source: { value: PROTOBUF } }).forEach((path) => {
-      const specifiers = path.node.specifiers ?? [];
-      for (const s of specifiers) {
-        if (
-          s.type === "ImportSpecifier" &&
-          s.imported.type === "Identifier" &&
-          s.imported.name === "getExtension"
-        ) {
-          s.imported.name = "getOption";
-          if (s.local?.type === "Identifier" && s.local.name === "getExtension") {
-            s.local.name = "getOption";
+    root
+      .find(j.ImportDeclaration, { source: { value: PROTOBUF } })
+      .forEach((path) => {
+        const specifiers = path.node.specifiers ?? [];
+        for (const s of specifiers) {
+          if (
+            s.type === "ImportSpecifier" &&
+            s.imported.type === "Identifier" &&
+            s.imported.name === "getExtension"
+          ) {
+            s.imported.name = "getOption";
+            if (
+              s.local?.type === "Identifier" &&
+              s.local.name === "getExtension"
+            ) {
+              s.local.name = "getOption";
+            }
           }
         }
-      }
-    });
+      });
   }
 
   if (!transformed) {

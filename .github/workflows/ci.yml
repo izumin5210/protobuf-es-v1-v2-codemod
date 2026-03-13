@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        command:
+          - name: format-and-lint
+            run: pnpm check
+          - name: typecheck
+            run: pnpm typecheck
+      fail-fast: false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    name: ${{ matrix.command.name }}
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        with:
+          node-version: "lts/*"
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: ${{ matrix.command.name }}
+        run: ${{ matrix.command.run }}
+      - name: Check for uncommitted changes
+        run: git diff --exit-code
+
+  test:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node-version: "lts/*"
+          - os: ubuntu-latest
+            node-version: "lts/-1"
+          - os: windows-latest
+            node-version: "lts/*"
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    name: test / Node.js ${{ matrix.node-version }} / ${{ matrix.os }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061 # v4
+      - uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Test
+        run: pnpm test
+
+  status-check:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+      - test
+    permissions: {}
+    if: failure()
+    steps:
+      - run: exit 1

@@ -1,11 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type {
-  Transform,
-  Options,
-  API,
-  FileInfo,
-} from "jscodeshift";
+import type { API, FileInfo, Options, Transform } from "jscodeshift";
 import jscodeshift from "jscodeshift";
 
 export interface ApplyTransformOptions {

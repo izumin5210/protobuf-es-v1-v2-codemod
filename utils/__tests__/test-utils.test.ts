@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import type { Transform } from "jscodeshift";
-import { applyTransform, applyFixtureTransform } from "../test-utils.js";
+import { describe, expect, it } from "vitest";
+import { applyFixtureTransform, applyTransform } from "../test-utils.js";
 
 const identityTransform: Transform = (fileInfo) => {
   return fileInfo.source;
