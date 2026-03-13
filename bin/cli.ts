@@ -75,8 +75,9 @@ export function parseArgs(argv: string[]): CliArgs {
 
 export function resolveTransforms(transform: TransformName | "all"): string[] {
   const names = transform === "all" ? [...TRANSFORM_NAMES] : [transform];
+  const ext = import.meta.url.endsWith(".ts") ? ".ts" : ".js";
   return names.map((name) =>
-    path.resolve(__dirname, "..", "transforms", `${name}.ts`),
+    path.resolve(__dirname, "..", "transforms", `${name}${ext}`),
   );
 }
 
