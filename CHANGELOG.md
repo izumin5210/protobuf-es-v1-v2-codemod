@@ -1,5 +1,11 @@
 # protobuf-es-v1-v2-codemod
 
+## 0.1.2
+
+### Patch Changes
+
+- [#9](https://github.com/izumin5210/protobuf-es-v1-v2-codemod/pull/9) [`562a906`](https://github.com/izumin5210/protobuf-es-v1-v2-codemod/commit/562a906fa41301e069198bddb5e8b07f60170259) Thanks [@izumin5210](https://github.com/izumin5210)! - fix: add shebang to CLI entry point
+
 ## 0.1.1
 
 ### Patch Changes
