@@ -1,0 +1,3 @@
+import { Timestamp, create } from "@bufbuild/protobuf";
+
+const ts: Timestamp = { seconds: BigInt(0), nanos: 0, $typeName: "google.protobuf.Timestamp" as const };
