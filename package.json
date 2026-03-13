@@ -1,6 +1,6 @@
 {
   "name": "protobuf-es-v1-v2-codemod",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Codemod to migrate protobuf-es v1 to v2",
   "author": "izumin5210 <m@izum.in>",
   "license": "MIT",
