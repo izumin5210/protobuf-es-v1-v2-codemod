@@ -16,24 +16,18 @@ protobuf-es v2 introduced a major shift from a class-based API to a plain object
 
 This codemod automates these mechanical transformations, significantly reducing the effort required for manual migration.
 
-## Installation
-
-```bash
-pnpm add -D protobuf-es-v1-v2-codemod
-```
-
 ## Usage
 
-### Run all transforms at once (recommended)
+Run all transforms at once (recommended):
 
 ```bash
-pnpm protobuf-es-codemod --transform=all src/
+npx protobuf-es-v1-v2-codemod --transform=all src/
 ```
 
-### Run a specific transform
+Run a specific transform:
 
 ```bash
-pnpm protobuf-es-codemod --transform=message-constructor src/
+npx protobuf-es-v1-v2-codemod --transform=message-constructor src/
 ```
 
 ### Options

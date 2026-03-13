@@ -6,7 +6,7 @@
   "main": "dist/bin/cli.js",
   "types": "dist/bin/cli.d.ts",
   "bin": {
-    "protobuf-es-codemod": "./dist/bin/cli.js"
+    "protobuf-es-v1-v2-codemod": "./dist/bin/cli.js"
   },
   "files": [
     "dist",
