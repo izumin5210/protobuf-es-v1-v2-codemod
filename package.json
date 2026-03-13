@@ -2,6 +2,15 @@
   "name": "protobuf-es-v1-v2-codemod",
   "version": "0.1.0",
   "description": "Codemod to migrate protobuf-es v1 to v2",
+  "author": "izumin5210 <m@izum.in>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/izumin5210/protobuf-es-v1-v2-codemod.git"
+  },
+  "bugs": {
+    "url": "https://github.com/izumin5210/protobuf-es-v1-v2-codemod/issues"
+  },
   "type": "module",
   "main": "dist/bin/cli.js",
   "types": "dist/bin/cli.d.ts",
@@ -27,7 +36,6 @@
     "changeset:release": "pnpm build && changeset publish"
   },
   "packageManager": "pnpm@10.30.1",
-  "license": "MIT",
   "dependencies": {
     "jscodeshift": "^17.3.0"
   },
