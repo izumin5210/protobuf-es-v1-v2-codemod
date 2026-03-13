@@ -1,5 +1,11 @@
 # protobuf-es-v1-v2-codemod
 
+## 0.1.3
+
+### Patch Changes
+
+- [#11](https://github.com/izumin5210/protobuf-es-v1-v2-codemod/pull/11) [`ccc164b`](https://github.com/izumin5210/protobuf-es-v1-v2-codemod/commit/ccc164b98c983d4478cd9c88d410cd95e03d0c72) Thanks [@izumin5210](https://github.com/izumin5210)! - fix: resolve symlink in isMain check so CLI runs correctly via npx
+
 ## 0.1.2
 
 ### Patch Changes
