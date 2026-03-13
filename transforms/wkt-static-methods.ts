@@ -38,7 +38,10 @@ const transform: Transform = (fileInfo, api) => {
         if (specifier.type !== "ImportSpecifier") continue;
         const imported = specifier.imported;
         if (imported.type !== "Identifier") continue;
-        const localName = specifier.local?.type === "Identifier" ? specifier.local.name : imported.name;
+        const localName =
+          specifier.local?.type === "Identifier"
+            ? specifier.local.name
+            : imported.name;
         if (WKT_STATIC_METHOD_MAP[imported.name]) {
           wktIdentifiers.set(localName, imported.name);
         }
@@ -63,7 +66,8 @@ const transform: Transform = (fileInfo, api) => {
 
       const object = callee.object;
       const property = callee.property;
-      if (object.type !== "Identifier" || property.type !== "Identifier") return;
+      if (object.type !== "Identifier" || property.type !== "Identifier")
+        return;
 
       const originalName = wktIdentifiers.get(object.name);
       if (!originalName) return;
@@ -76,7 +80,9 @@ const transform: Transform = (fileInfo, api) => {
 
       // `WKTType.method(args)` → `standaloneFunction(args)`
       j(path).replaceWith(
-        j.callExpression(j.identifier(standaloneName), [...path.node.arguments]),
+        j.callExpression(j.identifier(standaloneName), [
+          ...path.node.arguments,
+        ]),
       );
 
       functionsToAdd.add(standaloneName);
@@ -110,8 +116,10 @@ const transform: Transform = (fileInfo, api) => {
       // 使われなくなった WKT 型の specifier を除去
       path.node.specifiers = specifiers.filter((s) => {
         if (s.type !== "ImportSpecifier") return true;
-        const localName = s.local?.type === "Identifier" ? s.local.name : undefined;
-        const importedName = s.imported.type === "Identifier" ? s.imported.name : undefined;
+        const localName =
+          s.local?.type === "Identifier" ? s.local.name : undefined;
+        const importedName =
+          s.imported.type === "Identifier" ? s.imported.name : undefined;
         const name = localName ?? importedName;
         return !name || !wktTypesToRemove.has(name);
       });

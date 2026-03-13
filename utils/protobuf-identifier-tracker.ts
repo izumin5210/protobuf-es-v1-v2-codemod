@@ -61,7 +61,8 @@ export class ProtobufIdentifierTracker {
 
         const isTypeOnly =
           isDeclarationTypeOnly ||
-          (specifier as unknown as { importKind?: string }).importKind === "type";
+          (specifier as unknown as { importKind?: string }).importKind ===
+            "type";
 
         this.identifiers.set(localName, {
           localName,

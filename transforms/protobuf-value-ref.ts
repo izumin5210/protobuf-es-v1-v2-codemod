@@ -1,7 +1,7 @@
 import type { Transform } from "jscodeshift";
-import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { ImportManager } from "../utils/import-manager.js";
-import { toSchemaName, isSchemaName } from "../utils/schema-name.js";
+import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
+import { isSchemaName, toSchemaName } from "../utils/schema-name.js";
 
 /**
  * protobuf メッセージ型が値として参照されている箇所を Schema に変換する。

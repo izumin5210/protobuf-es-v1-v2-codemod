@@ -1,7 +1,10 @@
 const SCHEMA_SUFFIX = "Schema";
 
 export function toSchemaName(messageName: string): string {
-  if (messageName.endsWith(SCHEMA_SUFFIX) && messageName.length > SCHEMA_SUFFIX.length) {
+  if (
+    messageName.endsWith(SCHEMA_SUFFIX) &&
+    messageName.length > SCHEMA_SUFFIX.length
+  ) {
     return messageName;
   }
   return messageName + SCHEMA_SUFFIX;

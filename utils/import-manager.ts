@@ -56,7 +56,8 @@ export class ImportManager {
           path.node.specifiers = specifiers.filter((s) => {
             if (s.type !== "ImportSpecifier") return true;
             const local = s.local;
-            const localName = local?.type === "Identifier" ? local.name : undefined;
+            const localName =
+              local?.type === "Identifier" ? local.name : undefined;
             return !localName || !names.has(localName);
           });
 
@@ -106,8 +107,9 @@ export class ImportManager {
     if (targetDecl) {
       const existing = new Set(
         (targetDecl.node.specifiers ?? [])
-          .filter((s): s is ReturnType<typeof this.j.importSpecifier> =>
-            s.type === "ImportSpecifier",
+          .filter(
+            (s): s is ReturnType<typeof this.j.importSpecifier> =>
+              s.type === "ImportSpecifier",
           )
           .map((s) => s.local?.name ?? (s.imported as { name: string }).name),
       );
@@ -124,10 +126,7 @@ export class ImportManager {
       const specifiers = newNames.map((name) =>
         this.j.importSpecifier(this.j.identifier(name)),
       );
-      const decl = this.j.importDeclaration(
-        specifiers,
-        this.j.literal(source),
-      );
+      const decl = this.j.importDeclaration(specifiers, this.j.literal(source));
       if (isType) {
         decl.importKind = "type";
       }

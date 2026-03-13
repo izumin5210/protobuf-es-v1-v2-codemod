@@ -1,6 +1,6 @@
 import type { Transform } from "jscodeshift";
-import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { ImportManager } from "../utils/import-manager.js";
+import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { toSchemaName } from "../utils/schema-name.js";
 
 const PROTOBUF_RUNTIME_PACKAGE = "@bufbuild/protobuf";
@@ -17,35 +17,33 @@ const transform: Transform = (fileInfo, api) => {
   let needsCreateImport = false;
 
   // Find all `new X(...)` where X is a protobuf identifier
-  root
-    .find(j.NewExpression)
-    .forEach((path) => {
-      const callee = path.node.callee;
-      if (callee.type !== "Identifier") return;
+  root.find(j.NewExpression).forEach((path) => {
+    const callee = path.node.callee;
+    if (callee.type !== "Identifier") return;
 
-      const name = callee.name;
-      if (!tracker.isProtobufIdentifier(name)) return;
+    const name = callee.name;
+    if (!tracker.isProtobufIdentifier(name)) return;
 
-      const sourceFile = tracker.getSourceFile(name);
-      if (!sourceFile) return;
+    const sourceFile = tracker.getSourceFile(name);
+    if (!sourceFile) return;
 
-      const originalName = tracker.getOriginalName(name) ?? name;
-      const schemaName = toSchemaName(originalName);
+    const originalName = tracker.getOriginalName(name) ?? name;
+    const schemaName = toSchemaName(originalName);
 
-      // Build arguments for create(): schema first, then optional init object
-      const args: Parameters<typeof j.callExpression>[1] = [
-        j.identifier(schemaName),
-      ];
-      if (path.node.arguments.length > 0) {
-        args.push(...path.node.arguments);
-      }
+    // Build arguments for create(): schema first, then optional init object
+    const args: Parameters<typeof j.callExpression>[1] = [
+      j.identifier(schemaName),
+    ];
+    if (path.node.arguments.length > 0) {
+      args.push(...path.node.arguments);
+    }
 
-      // Replace `new X(init)` with `create(XSchema, init)`
-      j(path).replaceWith(j.callExpression(j.identifier("create"), args));
+    // Replace `new X(init)` with `create(XSchema, init)`
+    j(path).replaceWith(j.callExpression(j.identifier("create"), args));
 
-      needsCreateImport = true;
-      schemasToAdd.set(schemaName, sourceFile);
-    });
+    needsCreateImport = true;
+    schemasToAdd.set(schemaName, sourceFile);
+  });
 
   if (!needsCreateImport) {
     return fileInfo.source;

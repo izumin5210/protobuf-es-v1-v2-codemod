@@ -7,6 +7,7 @@
     "protobuf-es-codemod": "./bin/cli.ts"
   },
   "scripts": {
+    "check": "biome check --write",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
@@ -17,12 +18,15 @@
     "jscodeshift": "^17.3.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.6",
     "@types/jscodeshift": "^17.3.0",
     "@types/node": "^25.3.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

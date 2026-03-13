@@ -1,7 +1,7 @@
-import type { Transform, ASTPath, Identifier } from "jscodeshift";
-import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
+import type { ASTPath, Identifier, Transform } from "jscodeshift";
 import { ImportManager } from "../utils/import-manager.js";
-import { toSchemaName, isSchemaName } from "../utils/schema-name.js";
+import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
+import { isSchemaName, toSchemaName } from "../utils/schema-name.js";
 
 const PROTOBUF_RUNTIME_PACKAGE = "@bufbuild/protobuf";
 
@@ -52,7 +52,8 @@ const transform: Transform = (fileInfo, api) => {
         const sourceFile = tracker.getSourceFile(messageName);
         if (!sourceFile) return;
 
-        const originalName = tracker.getOriginalName(messageName) ?? messageName;
+        const originalName =
+          tracker.getOriginalName(messageName) ?? messageName;
         const schemaName = toSchemaName(originalName);
 
         // `msg.method(args)` → `method(Schema, msg, args)`
@@ -62,9 +63,7 @@ const transform: Transform = (fileInfo, api) => {
           ...path.node.arguments,
         ];
 
-        j(path).replaceWith(
-          j.callExpression(j.identifier(methodName), args),
-        );
+        j(path).replaceWith(j.callExpression(j.identifier(methodName), args));
 
         runtimeFunctionsToAdd.add(methodName);
         schemasToAdd.set(schemaName, sourceFile);
@@ -82,15 +81,9 @@ const transform: Transform = (fileInfo, api) => {
       ) {
         const schemaIdentifier = object.arguments[0];
         // create(XSchema, ...).method(args) → method(XSchema, create(XSchema, ...), args)
-        const args = [
-          schemaIdentifier,
-          object,
-          ...path.node.arguments,
-        ];
+        const args = [schemaIdentifier, object, ...path.node.arguments];
 
-        j(path).replaceWith(
-          j.callExpression(j.identifier(methodName), args),
-        );
+        j(path).replaceWith(j.callExpression(j.identifier(methodName), args));
 
         runtimeFunctionsToAdd.add(methodName);
         // Schema は既に import されているはずなので schemasToAdd に追加しない
@@ -221,12 +214,17 @@ const transform: Transform = (fileInfo, api) => {
       const varName = id.name;
 
       // 型注釈がある場合
-      const typeAnnotation = (id as Identifier & { typeAnnotation?: { typeAnnotation?: { typeName?: { name?: string } } } }).typeAnnotation;
+      const typeAnnotation = (
+        id as Identifier & {
+          typeAnnotation?: {
+            typeAnnotation?: { typeName?: { name?: string } };
+          };
+        }
+      ).typeAnnotation;
       if (typeAnnotation) {
         const tsType = typeAnnotation.typeAnnotation;
         if (
-          tsType &&
-          tsType.typeName &&
+          tsType?.typeName &&
           typeof tsType.typeName.name === "string" &&
           tracker.isProtobufIdentifier(tsType.typeName.name)
         ) {
@@ -271,13 +269,16 @@ const transform: Transform = (fileInfo, api) => {
     for (const funcPath of functionNodes) {
       for (const param of funcPath.node.params) {
         if (param.type !== "Identifier") continue;
-        const paramId = param as Identifier & { typeAnnotation?: { typeAnnotation?: { typeName?: { name?: string } } } };
+        const paramId = param as Identifier & {
+          typeAnnotation?: {
+            typeAnnotation?: { typeName?: { name?: string } };
+          };
+        };
         const typeAnnotation = paramId.typeAnnotation;
         if (!typeAnnotation) continue;
         const tsType = typeAnnotation.typeAnnotation;
         if (
-          tsType &&
-          tsType.typeName &&
+          tsType?.typeName &&
           typeof tsType.typeName.name === "string" &&
           tracker.isProtobufIdentifier(tsType.typeName.name)
         ) {
@@ -288,13 +289,20 @@ const transform: Transform = (fileInfo, api) => {
 
     // メソッドパラメータ
     root.find(j.ClassMethod).forEach((methodPath: ASTPath) => {
-      const node = methodPath.node as { params?: Array<{ type: string; name?: string; typeAnnotation?: { typeAnnotation?: { typeName?: { name?: string } } } }> };
+      const node = methodPath.node as {
+        params?: Array<{
+          type: string;
+          name?: string;
+          typeAnnotation?: {
+            typeAnnotation?: { typeName?: { name?: string } };
+          };
+        }>;
+      };
       for (const param of node.params ?? []) {
         if (param.type !== "Identifier" || !param.name) continue;
         const tsType = param.typeAnnotation?.typeAnnotation;
         if (
-          tsType &&
-          tsType.typeName &&
+          tsType?.typeName &&
           typeof tsType.typeName.name === "string" &&
           tracker.isProtobufIdentifier(tsType.typeName.name)
         ) {

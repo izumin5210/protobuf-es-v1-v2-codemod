@@ -1,6 +1,6 @@
 import type { Transform } from "jscodeshift";
-import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { ImportManager } from "../utils/import-manager.js";
+import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { toSchemaName } from "../utils/schema-name.js";
 
 const PROTOBUF_RUNTIME_PACKAGE = "@bufbuild/protobuf";
@@ -21,30 +21,28 @@ const transform: Transform = (fileInfo, api) => {
   let needsIsMessage = false;
 
   // `x instanceof ProtoMessage` → `isMessage(x, ProtoMessageSchema)`
-  root
-    .find(j.BinaryExpression, { operator: "instanceof" })
-    .forEach((path) => {
-      const right = path.node.right;
-      if (right.type !== "Identifier") return;
-      if (!tracker.isProtobufIdentifier(right.name)) return;
+  root.find(j.BinaryExpression, { operator: "instanceof" }).forEach((path) => {
+    const right = path.node.right;
+    if (right.type !== "Identifier") return;
+    if (!tracker.isProtobufIdentifier(right.name)) return;
 
-      const originalName = tracker.getOriginalName(right.name) ?? right.name;
-      const sourceFile = tracker.getSourceFile(right.name);
-      if (!sourceFile) return;
+    const originalName = tracker.getOriginalName(right.name) ?? right.name;
+    const sourceFile = tracker.getSourceFile(right.name);
+    if (!sourceFile) return;
 
-      const schemaName = toSchemaName(originalName);
+    const schemaName = toSchemaName(originalName);
 
-      // `x instanceof Foo` → `isMessage(x, FooSchema)`
-      j(path).replaceWith(
-        j.callExpression(j.identifier("isMessage"), [
-          path.node.left,
-          j.identifier(schemaName),
-        ]),
-      );
+    // `x instanceof Foo` → `isMessage(x, FooSchema)`
+    j(path).replaceWith(
+      j.callExpression(j.identifier("isMessage"), [
+        path.node.left,
+        j.identifier(schemaName),
+      ]),
+    );
 
-      schemasToAdd.set(schemaName, sourceFile);
-      needsIsMessage = true;
-    });
+    schemasToAdd.set(schemaName, sourceFile);
+    needsIsMessage = true;
+  });
 
   if (!needsIsMessage) {
     return fileInfo.source;

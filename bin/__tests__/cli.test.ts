@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { parseArgs, resolveTransforms, TRANSFORM_NAMES } from "../cli.js";
 
 describe("parseArgs", () => {
@@ -39,9 +39,7 @@ describe("parseArgs", () => {
   });
 
   it("throws for unknown transform name", () => {
-    expect(() => parseArgs(["--transform=unknown", "src/"])).toThrow(
-      "unknown",
-    );
+    expect(() => parseArgs(["--transform=unknown", "src/"])).toThrow("unknown");
   });
 });
 
@@ -60,7 +58,7 @@ describe("resolveTransforms", () => {
   it("returns transforms in the recommended execution order", () => {
     const result = resolveTransforms("all");
     const names = result.map((p) => {
-      const match = p.match(/\/([^/]+)\.ts$/);
+      const match = p.match(/[/\\]([^/\\]+)\.ts$/);
       return match?.[1];
     });
     expect(names).toEqual([

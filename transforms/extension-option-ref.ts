@@ -1,6 +1,6 @@
 import type { Transform } from "jscodeshift";
-import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { ImportManager } from "../utils/import-manager.js";
+import { ProtobufIdentifierTracker } from "../utils/protobuf-identifier-tracker.js";
 import { isSchemaName } from "../utils/schema-name.js";
 
 const SCHEMA_SUFFIX = "Schema";
@@ -129,7 +129,10 @@ const transform: Transform = (fileInfo, api) => {
               local?.type === "Identifier" ? local.name : undefined;
             const importedName = (specifier.imported as { name: string }).name;
 
-            if (localName === schemaLocalName || importedName === originalName) {
+            if (
+              localName === schemaLocalName ||
+              importedName === originalName
+            ) {
               (specifier.imported as { name: string }).name = resolvedName;
               if (local && local.type === "Identifier") {
                 local.name = resolvedName;

@@ -1,6 +1,6 @@
 import type { Transform } from "jscodeshift";
 
-const CONNECT_SUFFIX_PATTERN = /_connect(["'])/g;
+const _CONNECT_SUFFIX_PATTERN = /_connect(["'])/g;
 
 /**
  * `_connect` サフィックスの import パスを `_pb` に書き換える。

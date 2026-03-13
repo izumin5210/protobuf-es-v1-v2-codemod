@@ -19,8 +19,10 @@ const transform: Transform = (fileInfo, api) => {
 
   // ローカルに createClient という名前の宣言があるかチェック
   const hasLocalCreateClient =
-    root.find(j.FunctionDeclaration, { id: { name: "createClient" } }).length > 0 ||
-    root.find(j.VariableDeclarator, { id: { name: "createClient" } }).length > 0;
+    root.find(j.FunctionDeclaration, { id: { name: "createClient" } }).length >
+      0 ||
+    root.find(j.VariableDeclarator, { id: { name: "createClient" } }).length >
+      0;
 
   // @connectrpc/connect からの import を書き換え
   // imported と local が同一ノードの場合があるため、specifier 自体を置換する
@@ -65,9 +67,11 @@ const transform: Transform = (fileInfo, api) => {
           changed = true;
           const newSpec = j.importSpecifier(j.identifier("DescService"));
           // importKind を引き継ぐ (type specifier の場合)
-          const oldKind = (specifier as unknown as { importKind?: string }).importKind;
+          const oldKind = (specifier as unknown as { importKind?: string })
+            .importKind;
           if (oldKind) {
-            (newSpec as unknown as { importKind?: string }).importKind = oldKind;
+            (newSpec as unknown as { importKind?: string }).importKind =
+              oldKind;
           }
           return newSpec;
         }
@@ -81,27 +85,23 @@ const transform: Transform = (fileInfo, api) => {
   }
 
   // コード中の PromiseClient, createPromiseClient, ServiceType 参照を書き換え
-  root
-    .find(j.Identifier, { name: "PromiseClient" })
-    .forEach((path) => {
-      // import specifier 内は既に書き換え済み
-      if (path.parent.node.type === "ImportSpecifier") return;
-      path.node.name = "Client";
-    });
+  root.find(j.Identifier, { name: "PromiseClient" }).forEach((path) => {
+    // import specifier 内は既に書き換え済み
+    if (path.parent.node.type === "ImportSpecifier") return;
+    path.node.name = "Client";
+  });
 
-  root
-    .find(j.Identifier, { name: "createPromiseClient" })
-    .forEach((path) => {
-      if (path.parent.node.type === "ImportSpecifier") return;
-      path.node.name = hasLocalCreateClient ? "connectCreateClient" : "createClient";
-    });
+  root.find(j.Identifier, { name: "createPromiseClient" }).forEach((path) => {
+    if (path.parent.node.type === "ImportSpecifier") return;
+    path.node.name = hasLocalCreateClient
+      ? "connectCreateClient"
+      : "createClient";
+  });
 
-  root
-    .find(j.Identifier, { name: "ServiceType" })
-    .forEach((path) => {
-      if (path.parent.node.type === "ImportSpecifier") return;
-      path.node.name = "DescService";
-    });
+  root.find(j.Identifier, { name: "ServiceType" }).forEach((path) => {
+    if (path.parent.node.type === "ImportSpecifier") return;
+    path.node.name = "DescService";
+  });
 
   return root.toSource();
 };
