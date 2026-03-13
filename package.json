@@ -3,14 +3,28 @@
   "version": "0.1.0",
   "description": "Codemod to migrate protobuf-es v1 to v2",
   "type": "module",
+  "main": "dist/bin/cli.js",
+  "types": "dist/bin/cli.d.ts",
   "bin": {
-    "protobuf-es-codemod": "./bin/cli.ts"
+    "protobuf-es-codemod": "./dist/bin/cli.js"
   },
+  "files": [
+    "dist",
+    "!**/__tests__/**",
+    "!**/*.test.ts",
+    "!**/*.test.js",
+    "!**/*.test.d.ts",
+    "!**/*.test.js.map",
+    "!**/*.test.d.ts.map"
+  ],
   "scripts": {
+    "build": "tsc",
     "check": "biome check --write",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "changeset:version": "changeset version",
+    "changeset:release": "pnpm build && changeset publish"
   },
   "packageManager": "pnpm@10.30.1",
   "license": "MIT",
@@ -19,6 +33,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
+    "@changesets/changelog-github": "0.6.0",
+    "@changesets/cli": "2.30.0",
     "@types/jscodeshift": "^17.3.0",
     "@types/node": "^25.3.0",
     "typescript": "^5.9.3",
