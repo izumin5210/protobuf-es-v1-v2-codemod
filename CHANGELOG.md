@@ -1,5 +1,11 @@
 # protobuf-es-v1-v2-codemod
 
+## 0.1.1
+
+### Patch Changes
+
+- [#7](https://github.com/izumin5210/protobuf-es-v1-v2-codemod/pull/7) [`b6b44b7`](https://github.com/izumin5210/protobuf-es-v1-v2-codemod/commit/b6b44b73a0cb0275de1f45bbdb253f8d93456320) Thanks [@izumin5210](https://github.com/izumin5210)! - fix: add package metadata
+
 ## 0.1.0
 
 ### Minor Changes
