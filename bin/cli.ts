@@ -54,7 +54,7 @@ export function parseArgs(argv: string[]): CliArgs {
 
   if (!transform) {
     throw new Error(
-      "Missing --transform option. Usage: protobuf-es-codemod --transform=<name|all> <path>",
+      "Missing --transform option. Usage: protobuf-es-v1-v2-codemod --transform=<name|all> <path>",
     );
   }
 
@@ -66,7 +66,7 @@ export function parseArgs(argv: string[]): CliArgs {
 
   if (paths.length === 0) {
     throw new Error(
-      "No path provided. Usage: protobuf-es-codemod --transform=<name|all> <path>",
+      "No path provided. Usage: protobuf-es-v1-v2-codemod --transform=<name|all> <path>",
     );
   }
 
