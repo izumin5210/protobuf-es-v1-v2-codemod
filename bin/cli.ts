@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -106,10 +107,12 @@ async function main(): Promise<void> {
 }
 
 // CLI として直接実行された場合
+// npx 経由では process.argv[1] が symlink を指すため、realpath で解決して比較する
 const isMain =
   process.argv[1] &&
-  (process.argv[1] === fileURLToPath(import.meta.url) ||
-    process.argv[1].endsWith("/cli.ts"));
+  (realpathSync(process.argv[1]) === fileURLToPath(import.meta.url) ||
+    process.argv[1].endsWith("/cli.ts") ||
+    process.argv[1].endsWith("/cli.js"));
 
 if (isMain) {
   main().catch((err: unknown) => {
